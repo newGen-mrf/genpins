@@ -21,15 +21,21 @@ PINTEREST_PASSWORD = os.getenv('PINTEREST_PASSWORD')
 async def _login(page):
     await page.goto('https://www.pinterest.com/login/')
     await page.wait_for_timeout(2000)
-    await page.wait_for_selector('input[type="email"], input[name="email"], input[id="email"]')
-    await page.fill('input[type="email"], input[name="email"], input[id="email"]', PINTEREST_EMAIL)
+    email_input = page.locator('input[type="email"], input[name="email"], input[id="email"], input[autocomplete="username"]').first
+    await email_input.fill(PINTEREST_EMAIL)
     await page.keyboard.press('Enter')
-    await page.wait_for_timeout(1500)
-    await page.wait_for_selector('input[type="password"], input[name="password"], input[id="password"]')
-    await page.fill('input[type="password"], input[name="password"], input[id="password"]', PINTEREST_PASSWORD)
+    await page.wait_for_timeout(2000)
+    password_input = page.locator('input[type="password"], input[name="password"], input[id="password"], input[autocomplete="current-password"]').first
+    await password_input.fill(PINTEREST_PASSWORD)
     await page.keyboard.press('Enter')
-    await page.wait_for_timeout(3000)
-    await page.wait_for_url('**/pinterest.com/**', timeout=20000)
+    await page.wait_for_timeout(5000)
+    try:
+        await page.wait_for_url('**/pinterest.com/**', timeout=15000)
+    except:
+        await page.screenshot(path="output/v2/login_debug.png")
+        current_url = page.url
+        print(f"Login didn't redirect. Current URL: {current_url}")
+        raise
 
 async def upload_pin(image_path: str, title: str, description: str, link: str = '', board_name: str = 'AIProfitLabCash') -> dict:
     """Upload a single pin to Pinterest.
@@ -76,7 +82,7 @@ async def upload_pin(image_path: str, title: str, description: str, link: str = 
         try:
             if 'page' in locals():
                 await page.screenshot(path="output/v2/error_screenshot.png")
-                print("Saved error screenshot to output/v2/error_screenshot.png")
+                print(f"Saved error screenshot to output/v2/error_screenshot.png. Current URL: {page.url}")
         except:
             pass
     return result
