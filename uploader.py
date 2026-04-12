@@ -22,11 +22,11 @@ async def _login(page):
     await page.goto('https://www.pinterest.com/login/')
     await page.wait_for_selector('input[name="id"]')
     await page.fill('input[name="id"]', PINTEREST_EMAIL)
-    await page.click('button[type="submit"]')
+    await page.click('button[type="submit"]', force=True)
     # Wait for password field
     await page.wait_for_selector('input[name="password"]')
     await page.fill('input[name="password"]', PINTEREST_PASSWORD)
-    await page.click('button[type="submit"]')
+    await page.click('button[type="submit"]', force=True)
     # Wait for home page to load
     await page.wait_for_selector('div[data-test-id="homepage-feed"]', timeout=15000)
 
