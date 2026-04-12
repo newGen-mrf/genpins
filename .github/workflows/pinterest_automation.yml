@@ -1,0 +1,59 @@
+name: Pinterest Automation
+
+on:
+  schedule:
+    - cron: '0 */4 * * *'  # every 4 hours UTC
+  workflow_dispatch:
+    inputs:
+      run_generate:
+        description: 'Run generation step'
+        required: false
+        default: 'true'
+      run_post:
+        description: 'Run posting step'
+        required: false
+        default: 'true'
+
+jobs:
+  automate:
+    runs-on: ubuntu-latest
+    env:
+      PINTEREST_EMAIL: ${{ secrets.PINTEREST_EMAIL }}
+      PINTEREST_PASSWORD: ${{ secrets.PINTEREST_PASSWORD }}
+      GIT_PAT: ${{ secrets.TARGET_REPO_PAT }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Install Playwright browsers
+        run: |
+          python -m playwright install chromium --with-deps
+
+      - name: Run generation and posting
+        run: |
+          python main.py --generate ${{ github.event.inputs.run_generate == 'true' && '--generate' || '' }} \
+                         --post ${{ github.event.inputs.run_post == 'true' && '--post' || '' }}
+
+      - name: Configure git for target repo
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git remote set-url origin https://x-access-token:${GIT_PAT}@github.com/newGen-mrf/genpins.git
+
+      - name: Commit state and assets
+        run: |
+          git add db/state.json output/v2/*.jpg || true
+          git commit -m "🤖 Update state and new pins [skip ci]" || echo "No changes to commit"
+          git push origin HEAD:${{ github.ref_name }}
