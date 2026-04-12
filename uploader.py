@@ -21,16 +21,15 @@ PINTEREST_PASSWORD = os.getenv('PINTEREST_PASSWORD')
 async def _login(page):
     await page.goto('https://www.pinterest.com/login/')
     await page.wait_for_timeout(2000)
-    await page.wait_for_selector('input[name="id"]')
-    await page.fill('input[name="id"]', PINTEREST_EMAIL)
+    await page.wait_for_selector('input[type="email"], input[name="email"], input[id="email"]')
+    await page.fill('input[type="email"], input[name="email"], input[id="email"]', PINTEREST_EMAIL)
     await page.keyboard.press('Enter')
-    # Wait for password field
-    await page.wait_for_timeout(1000)
-    await page.wait_for_selector('input[name="password"]')
-    await page.fill('input[name="password"]', PINTEREST_PASSWORD)
+    await page.wait_for_timeout(1500)
+    await page.wait_for_selector('input[type="password"], input[name="password"], input[id="password"]')
+    await page.fill('input[type="password"], input[name="password"], input[id="password"]', PINTEREST_PASSWORD)
     await page.keyboard.press('Enter')
-    # Wait for home page to load
-    await page.wait_for_selector('div[data-test-id="homepage-feed"]', timeout=20000)
+    await page.wait_for_timeout(3000)
+    await page.wait_for_url('**/pinterest.com/**', timeout=20000)
 
 async def upload_pin(image_path: str, title: str, description: str, link: str = '', board_name: str = 'AIProfitLabCash') -> dict:
     """Upload a single pin to Pinterest.
@@ -49,22 +48,26 @@ async def upload_pin(image_path: str, title: str, description: str, link: str = 
             # Skip homepage clutters and navigate directly to the Pin Builder
             await page.wait_for_timeout(2000)
             await page.goto('https://www.pinterest.com/pin-creation/tool/')
-            # Upload image
+            await page.wait_for_timeout(2000)
             await page.set_input_files('input[type="file"]', image_path)
-            # Fill title and description
-            await page.fill('textarea[data-test-id="pin-create-title"]', title)
-            await page.fill('textarea[data-test-id="pin-create-description"]', description)
+            await page.wait_for_timeout(3000)
+            title_field = page.locator('textarea').first
+            await title_field.fill(title)
+            desc_field = page.locator('textarea').nth(1)
+            await desc_field.fill(description)
             if link:
-                await page.fill('input[data-test-id="pin-create-destination-url"]', link)
-            # Select board
-            await page.click('div[data-test-id="board-select-button"]', force=True)
-            await page.wait_for_selector(f'div[role="listbox"] div:has-text("{board_name}")')
-            await page.click(f'div[role="listbox"] div:has-text("{board_name}")', force=True)
-            # Publish
-            await page.click('button[data-test-id="pin-create-save-button"]', force=True)
-            # Wait for pin to appear and capture URL
-            await page.wait_for_selector('a[data-test-id="pin-link"]', timeout=15000)
-            pin_url = await page.get_attribute('a[data-test-id="pin-link"]', 'href')
+                link_field = page.locator('input[type="url"], input[placeholder*="destination"], input[placeholder*="link"]').first
+                await link_field.fill(link)
+            board_btn = page.locator('div[role="combobox"], div[data-test-id="board-select-button"], button:has-text("Board")').first
+            await board_btn.click(force=True)
+            await page.wait_for_timeout(1000)
+            board_option = page.locator(f'text="{board_name}", div[role="option"]:has-text("{board_name}")').first
+            await board_option.click()
+            await page.wait_for_timeout(1000)
+            save_btn = page.locator('button[type="submit"], button:has-text("Save"), button[data-test-id="pin-create-save-button"]').first
+            await save_btn.click()
+            await page.wait_for_timeout(5000)
+            pin_url = page.url
             result['success'] = True
             result['url'] = pin_url
             await browser.close()
