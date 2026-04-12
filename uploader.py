@@ -2,7 +2,8 @@ import os
 import json
 import asyncio
 from playwright.async_api import async_playwright
-from playwright_stealth import stealth_async
+from playwright_stealth import stealth_sync
+
 
 # Environment variables for credentials
 PINTEREST_EMAIL = os.getenv('PINTEREST_EMAIL')
@@ -29,7 +30,7 @@ async def upload_pin(image_path: str, title: str, description: str, link: str = 
             browser = await p.chromium.launch(headless=True)
             context = await browser.new_context()
             page = await context.new_page()
-            await stealth_async(page)
+            await stealth_sync(page)
             await _login(page)
             # Click the create pin button
             await page.wait_for_selector('button[data-test-id="header-create-button"]')
