@@ -2,6 +2,7 @@ import os
 import json
 import argparse
 import subprocess
+import asyncio
 from datetime import datetime, date
 
 # Import generation function (assumes generate_demo_v2 provides a function)
@@ -52,7 +53,10 @@ def main(generate: bool = False, post: bool = False):
                 break
             title = os.path.splitext(os.path.basename(pin_path))[0]
             description = f"Automated pin generated on {datetime.now().strftime('%Y-%m-%d %H:%M')}"
-            result = upload_pin(pin_path, title, description)
+            
+            print(f"Uploading: {pin_path}...")
+            result = asyncio.run(upload_pin(pin_path, title, description))
+            
             if result.get('success'):
                 posted += 1
                 print(f"Posted: {result.get('url')}")
