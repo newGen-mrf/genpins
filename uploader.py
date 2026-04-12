@@ -2,7 +2,16 @@ import os
 import json
 import asyncio
 from playwright.async_api import async_playwright
-from playwright_stealth import stealth_sync
+
+try:
+    from playwright_stealth import stealth_async
+except ImportError:
+    try:
+        from playwright_stealth import stealth_sync as stealth_async
+    except ImportError:
+        # Fallback dummy stealth function if library is broken
+        async def stealth_async(page):
+            pass
 
 
 # Environment variables for credentials
@@ -30,7 +39,10 @@ async def upload_pin(image_path: str, title: str, description: str, link: str = 
             browser = await p.chromium.launch(headless=True)
             context = await browser.new_context()
             page = await context.new_page()
-            await stealth_sync(page)
+            try:
+                await stealth_async(page)
+            except Exception as e:
+                print(f"Stealth application failed, proceeding without it: {e}")
             await _login(page)
             # Click the create pin button
             await page.wait_for_selector('button[data-test-id="header-create-button"]')
