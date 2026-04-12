@@ -17,6 +17,8 @@ on:
 jobs:
   automate:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     env:
       PINTEREST_EMAIL: ${{ secrets.PINTEREST_EMAIL }}
       PINTEREST_PASSWORD: ${{ secrets.PINTEREST_PASSWORD }}
@@ -46,14 +48,13 @@ jobs:
           python main.py --generate ${{ github.event.inputs.run_generate == 'true' && '--generate' || '' }} \
                          --post ${{ github.event.inputs.run_post == 'true' && '--post' || '' }}
 
-      - name: Configure git for target repo
+      - name: Configure git
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git remote set-url origin https://x-access-token:${GIT_PAT}@github.com/newGen-mrf/genpins.git
 
       - name: Commit state and assets
         run: |
           git add db/state.json output/v2/*.jpg || true
           git commit -m "🤖 Update state and new pins [skip ci]" || echo "No changes to commit"
-          git push origin HEAD:${{ github.ref_name }}
+          git push -u origin HEAD:${{ github.ref_name }}

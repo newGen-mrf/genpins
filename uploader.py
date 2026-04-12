@@ -46,7 +46,7 @@ async def upload_pin(image_path: str, title: str, description: str, link: str = 
             await _login(page)
             # Click the create pin button
             await page.wait_for_selector('button[data-test-id="header-create-button"]')
-            await page.click('button[data-test-id="header-create-button"]')
+            await page.click('button[data-test-id="header-create-button"]', force=True)
             # Upload image
             await page.set_input_files('input[type="file"]', image_path)
             # Fill title and description
@@ -55,11 +55,11 @@ async def upload_pin(image_path: str, title: str, description: str, link: str = 
             if link:
                 await page.fill('input[data-test-id="pin-create-destination-url"]', link)
             # Select board
-            await page.click('div[data-test-id="board-select-button"]')
+            await page.click('div[data-test-id="board-select-button"]', force=True)
             await page.wait_for_selector(f'div[role="listbox"] div:has-text("{board_name}")')
-            await page.click(f'div[role="listbox"] div:has-text("{board_name}")')
+            await page.click(f'div[role="listbox"] div:has-text("{board_name}")', force=True)
             # Publish
-            await page.click('button[data-test-id="pin-create-save-button"]')
+            await page.click('button[data-test-id="pin-create-save-button"]', force=True)
             # Wait for pin to appear and capture URL
             await page.wait_for_selector('a[data-test-id="pin-link"]', timeout=15000)
             pin_url = await page.get_attribute('a[data-test-id="pin-link"]', 'href')
